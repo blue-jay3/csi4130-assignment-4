@@ -4,15 +4,37 @@ export let snow;
 export let snowGeometry;
 export let snowMaterial;
 
-const snowCount = 4000;
-const SNOW_RADIUS = 3.1
+let snowCount;
+let snowSize;
+const SNOW_RADIUS = 3.1;
 
 const textureLoader = new THREE.TextureLoader();
 const snowTexture = textureLoader.load("https://threejs.org/examples/textures/sprites/disc.png");
 
 let velocities = [];
 
+// determine particle count and size based on screen size
+function getSnowQuality() {
+  const width = window.innerWidth;
+
+  if (width < 600) return { count: 1000, size: 0.2 };
+  if (width < 1200) return { count: 2000, size: 0.15 };
+  return { count: 4000, size: 0.12 };
+}
+
+// remove and recreate snow particles
+export function rebuildSnow(object) {
+  if (snow) {
+    object.remove(snow);
+  }
+
+  createSnow(object);
+}
+
 export function createSnow(object) {
+  const quality = getSnowQuality();
+  snowCount = quality.count;
+  snowSize = quality.size;
   snowGeometry = new THREE.BufferGeometry();
   const positions = [];
   velocities = [];
@@ -40,8 +62,9 @@ export function createSnow(object) {
   // create particle material
   snowMaterial = new THREE.PointsMaterial({
     map: snowTexture,
-    size: 0.1,
+    size: snowSize,
     transparent: true,
+    alphaTest: 0.5,
     blending: THREE.AdditiveBlending // make particles white
   });
   
