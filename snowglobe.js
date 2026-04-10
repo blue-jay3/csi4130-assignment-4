@@ -273,8 +273,15 @@ window.addEventListener('click', (event) => {
 document.addEventListener("keydown", (event) => {
   if (event.key == " ") { // play animation when space is pressed
     actions.forEach((action) => {
-      action.reset();
-      action.play();
+      if (action.isRunning()){
+        action.paused = true;
+      } else if (action.paused && action.time != action.getClip().duration) {
+        action.paused = false;
+        action.play();
+      } else {
+        action.reset();
+        action.play();
+      } 
     });
   }
 
