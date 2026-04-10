@@ -12,6 +12,8 @@ let mouseY = window.innerHeight / 2;
 
 let object;
 
+let mouseControlEnabled = true;
+
 const loader = new GLTFLoader();
 
 const renderer = new THREE.WebGLRenderer({alpha: true}); // transparent back
@@ -100,7 +102,7 @@ function animate() {
   }
 
   // move the model according to the cursor
-  if (object) {
+  if (object && mouseControlEnabled) {
     object.rotation.y = params["rotYOffset"] + mouseX * params["rotYMultiplier"] / window.innerWidth;
     object.rotation.x = params["rotXOffset"] + mouseY * params["rotXMultiplier"] / window.innerHeight;
   }
@@ -119,15 +121,21 @@ document.addEventListener("keydown", (event) => {
       action.play();
     });
   }
+
+  if (event.key.toLowerCase() === "m") {
+    mouseControlEnabled = !mouseControlEnabled;
+  }
 });
 
 // get mouse position as its moving
 // get mouse movement speed
 document.onmousemove = (e) => {
-  const dx = e.clientX - lastMouseX;
-  const dy = e.clientY - lastMouseY;
+  if (mouseControlEnabled) {
+    const dx = e.clientX - lastMouseX;
+    const dy = e.clientY - lastMouseY;
 
-  shakeForce = Math.sqrt(dx*dx + dy*dy) * 0.003; // distance the mouse moved
+    shakeForce = Math.sqrt(dx*dx + dy*dy) * 0.003; // distance the mouse moved
+  }
 
   // update mouse position
   mouseX = e.clientX;
@@ -147,4 +155,3 @@ function onResize() {
 window.addEventListener("resize", onResize, true);
 
 animate();
-
