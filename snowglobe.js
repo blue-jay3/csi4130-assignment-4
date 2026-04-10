@@ -2,6 +2,8 @@ import * as THREE from "https://cdn.skypack.dev/three@0.129.0/build/three.module
 import { GLTFLoader } from "https://cdn.skypack.dev/three@0.129.0/examples/jsm/loaders/GLTFLoader.js";
 import * as dat from "https://cdn.skypack.dev/dat.gui@0.7.9";
 
+import { createSnow, updateSnow, snow } from "./snow.js";
+
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
@@ -22,12 +24,15 @@ loader.load("./snowglobe.gltf", function (gltf) {
     const material = new THREE.MeshBasicMaterial({
       color: 0xaaaaaa,
       transparent: true,
-      opacity: 0.5
+      opacity: 0.5,
+      depthWrite: false // do not write info to depth buffer
     });
 
     object.getObjectByName("Sphere").material = material;
 
     scene.add(object);
+
+    // retrieve animation clips
     mixer = new THREE.AnimationMixer(object);
     const clips = gltf.animations;
 
@@ -37,6 +42,9 @@ loader.load("./snowglobe.gltf", function (gltf) {
       action.loop = THREE.LoopOnce; // play once
       actions.push(action);
     });
+
+    // add snow
+    createSnow(object);
   },
   function (xhr) {
     //While it is loading, log the progress
@@ -61,6 +69,11 @@ scene.add(topLight);
 const ambientLight = new THREE.AmbientLight(0x333333, 2);
 scene.add(ambientLight);
 
+// add outer light
+const outerLight = new THREE.DirectionalLight(0xffffff, 1.3);
+outerLight.position.set(0, 0.5, 0.5);
+scene.add(outerLight);
+
 const gui = new dat.GUI();
 let params = {
   rotYOffset: -3,
@@ -74,9 +87,17 @@ gui.add(params, 'rotXOffset', -10, 10).name('X Offset');
 gui.add(params, 'rotXMultiplier', 0, 10).name('X Multiplier');
 gui.add(params, 'rotYMultiplier', 0, 10).name('Y Multiplier');
 
+let lastMouseX = mouseX;
+let lastMouseY = mouseY;
+let shakeForce = 0;
+
 const clock = new THREE.Clock(); // clock for the animation
 function animate() {
   requestAnimationFrame(animate);
+
+  if (snow)  {
+    updateSnow(shakeForce);
+  }
 
   // move the model according to the cursor
   if (object) {
@@ -101,9 +122,19 @@ document.addEventListener("keydown", (event) => {
 });
 
 // get mouse position as its moving
+// get mouse movement speed
 document.onmousemove = (e) => {
+  const dx = e.clientX - lastMouseX;
+  const dy = e.clientY - lastMouseY;
+
+  shakeForce = Math.sqrt(dx*dx + dy*dy) * 0.003; // distance the mouse moved
+
+  // update mouse position
   mouseX = e.clientX;
   mouseY = e.clientY;
+
+  lastMouseX = mouseX;
+  lastMouseY = mouseY;
 }
 
 function onResize() {
